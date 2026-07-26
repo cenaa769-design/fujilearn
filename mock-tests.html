@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#09090B">
+    <title>Mock Tests - Fuji Learn</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css?v=9.0">
+    
+    <script>
+        (function() {
+            const saved = localStorage.getItem('fuji_theme');
+            const theme = saved ? JSON.parse(saved) : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
+    <style>
+        .sub-header { position: relative !important; top: auto !important; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; padding-top: calc(16px + env(safe-area-inset-top, 0px)); background: var(--bg-primary); border-bottom: 1px solid var(--border-subtle); }
+        .sub-header h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: -0.02em; flex: 1; text-align: center; margin: 0; }
+        .back-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: var(--text-primary); transition: background 0.2s ease; text-decoration: none; cursor: pointer; border: none; background: none; }
+        .back-btn:active { background: var(--bg-tertiary); }
+        .header-spacer { width: 40px; }
+        .app-main { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+
+        /* N5/N4 Toggle */
+        .level-toggle { display: flex; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 999px; padding: 4px; margin: 16px 20px 20px 20px; }
+        .toggle-btn { flex: 1; padding: 10px 0; border-radius: 999px; font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); border: none; background: none; cursor: pointer; transition: all 0.2s ease; }
+        .toggle-btn.active { background: var(--accent-primary); color: white; box-shadow: 0 2px 8px rgba(129, 140, 248, 0.3); }
+
+        .test-grid { display: flex; flex-direction: column; gap: 16px; padding: 0 20px; }
+        .test-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .test-card:active { transform: scale(0.98); border-color: var(--accent-primary); }
+        
+        .test-info { display: flex; align-items: center; gap: 16px; }
+        .test-number { 
+            width: 50px; height: 50px; 
+            background: linear-gradient(135deg, var(--accent-primary), #6366f1); 
+            border-radius: 12px; 
+            display: flex; align-items: center; justify-content: center; 
+            color: white; font-weight: 800; font-size: 1.25rem; 
+        }
+        .test-details h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; color: var(--text-primary); }
+        .test-details p { font-size: 0.8rem; color: var(--text-secondary); margin: 0; }
+        
+        .test-arrow { color: var(--text-tertiary); }
+        .loading { text-align: center; padding: 40px; color: var(--text-tertiary); }
+    </style>
+</head>
+<body>
+
+    <div class="app-container animate-fade-in">
+        <header class="sub-header">
+            <button class="back-btn" onclick="window.history.back()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <h1>Mock Tests</h1>
+            <div class="header-spacer"></div>
+        </header>
+
+        <!-- N5/N4 Toggle -->
+        <div class="level-toggle">
+            <button class="toggle-btn active" id="btn-n5" onclick="switchLevel('n5')">N5</button>
+            <button class="toggle-btn" id="btn-n4" onclick="switchLevel('n4')">N4</button>
+        </div>
+
+        <main class="app-main">
+            <div style="padding: 0 20px; margin-bottom: 16px;">
+                <h2 style="font-size: 1.2rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px;" id="page-title">JLPT N5 Practice Exams</h2>
+                <p style="font-size: 0.9rem; color: var(--text-secondary);">Simulate the real exam environment.</p>
+            </div>
+            <div id="test-grid" class="test-grid">
+                <div class="loading">Loading tests...</div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js?v=9.0"></script>
+    <script>
+        let currentLevel = 'n5';
+
+        function switchLevel(level) {
+            if (level === currentLevel) return;
+            currentLevel = level;
+            
+            // Update toggle UI
+            document.getElementById('btn-n5').classList.toggle('active', level === 'n5');
+            document.getElementById('btn-n4').classList.toggle('active', level === 'n4');
+            
+            // Update title
+            document.getElementById('page-title').textContent = `JLPT ${level.toUpperCase()} Practice Exams`;
+            
+            // Reload tests
+            loadTests();
+        }
+
+        async function loadTests() {
+            const grid = document.getElementById('test-grid');
+            grid.innerHTML = '<div class="loading">Loading tests...</div>';
+            
+            try {
+                // Dynamically fetch the correct JSON file
+                const res = await fetch(`mocktests_${currentLevel}.json?v=9.0`);
+                const tests = await res.json();
+                grid.innerHTML = '';
+                
+                tests.forEach(test => {
+                    const card = document.createElement('a');
+                    // Pass the level to the exam page so it knows which file to load
+                    card.href = `mock-exam.html?id=${test.id}&level=${currentLevel}`;
+                    card.className = 'test-card';
+                    card.innerHTML = `
+                        <div class="test-info">
+                            <div class="test-number">${test.id}</div>
+                            <div class="test-details">
+                                <h3>${test.title}</h3>
+                                <p>${test.questions.length} Questions • ${test.duration} Minutes</p>
+                            </div>
+                        </div>
+                        <svg class="test-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (e) {
+                grid.innerHTML = `<div class="loading" style="color: var(--accent-error)">Error: mocktests_${currentLevel}.json not found or invalid!</div>`;
+                console.error(e);
+            }
+        }
+        
+        // Initialize
+        loadTests();
+    </script>
+</body>
+</html>
