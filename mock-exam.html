@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#09090B">
     <title>Exam Simulator - Fuji Learn</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css?v=9.0">
+    <link rel="stylesheet" href="style.css?v=10.0">
     <script>
         (function() {
             const saved = localStorage.getItem('fuji_theme');
@@ -102,7 +102,8 @@
 
         <div id="results-view" class="results-container">
             <div style="display: flex; justify-content: flex-start; margin-bottom: 24px;">
-                <button onclick="location.href='mock-tests.html'" style="padding: 10px 20px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 12px; color: var(--text-primary); font-weight: 600; cursor: pointer; touch-action: manipulation;">← Back</button>
+                <!-- FIXED: Changed location.href to location.replace to prevent history looping -->
+                <button onclick="location.replace('mock-tests.html')" style="padding: 10px 20px; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 12px; color: var(--text-primary); font-weight: 600; cursor: pointer; touch-action: manipulation;">← Back</button>
             </div>
             
             <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 24px;">Exam Results</h2>
@@ -126,7 +127,8 @@
             <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; text-align: left;">Review Answers</h3>
             <div id="review-list" style="text-align: left; padding-bottom: 100px;"></div>
 
-            <button class="btn-nav primary" style="width: 100%; margin-top: 20px;" onclick="location.href='mock-tests.html'">Back to Mock Tests</button>
+            <!-- FIXED: Changed location.href to location.replace to prevent history looping -->
+            <button class="btn-nav primary" style="width: 100%; margin-top: 20px;" onclick="location.replace('mock-tests.html')">Back to Mock Tests</button>
         </div>
 
         <div id="loading-screen" class="loading-screen">
@@ -135,7 +137,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=9.0"></script>
+    <script src="app.js?v=10.0"></script>
     <script>
         const state = { examData: null, currentPage: 0, answers: {}, timeLeft: 0, timerHandle: null, submitted: false, shuffledQuestions: [] };
         const Q_PER_PAGE = 10;
@@ -170,11 +172,10 @@
         async function initExam() {
             const params = new URLSearchParams(window.location.search);
             const testId = parseInt(params.get('id')) || 1;
-            const level = params.get('level') || 'n5'; // Read level from URL
+            const level = params.get('level') || 'n5';
             
             try {
-                // Dynamically fetch the correct JSON file based on level
-                const res = await fetch(`mocktests_${level}.json?v=9.0`);
+                const res = await fetch(`mocktests_${level}.json?v=10.0`);
                 const allTests = await res.json();
                 state.examData = allTests.find(t => t.id === testId);
                 if (!state.examData) throw new Error('Test not found');
