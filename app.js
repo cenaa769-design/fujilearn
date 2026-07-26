@@ -57,11 +57,7 @@ const FujiApp = (() => {
     };
 
     const init = () => {
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js').catch(() => {});
-            });
-        }
+        // Service worker registration removed - now handled in index.html with correct relative path
         Theme.init();
         initNavigation();
     };
