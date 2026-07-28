@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- NET #1: interactive-widget tells Android to shrink the viewport when the keyboard opens -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-visual">
     <meta name="theme-color" content="#09090B">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,13 +19,14 @@
         })();
     </script>
     <style>
+        html { height: 100%; }
         body {
             margin: 0; padding: 0; background: var(--bg-primary);
-            /* FIX: --app-h is the *visible* height. JS sets it from visualViewport so Android
-               never draws the input below the fold. Falls back to 100dvh / 100vh if JS is slow. */
+            /* NET #2: height = the real visible area (set by JS); dvh/vh are fallbacks */
             height: var(--app-h, 100dvh);
-            height: var(--app-h, 100vh); /* older-browser fallback line */
+            height: var(--app-h, 100vh);
             display: flex; flex-direction: column; overflow: hidden;
+            transition: transform 0.2s ease; /* smooth nudge */
         }
         .sub-header {
             position: relative; background: var(--bg-primary);
@@ -43,9 +45,9 @@
             justify-content: center; cursor: pointer; text-decoration: none;
         }
         .back-btn:active { transform: scale(0.9); }
-        
+
         .ai-messages {
-            flex: 1; min-height: 0; /* lets this area shrink & scroll when the keyboard opens */
+            flex: 1; min-height: 0; /* lets this shrink + scroll when keyboard is up */
             padding: 16px; overflow-y: auto; display: flex;
             flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch;
         }
@@ -56,7 +58,7 @@
         @keyframes popIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .ai-msg.bot { background: var(--bg-tertiary); color: var(--text-primary); border-bottom-left-radius: 4px; align-self: flex-start; }
         .ai-msg.user { background: var(--accent-primary); color: white; border-bottom-right-radius: 4px; align-self: flex-end; }
-        
+
         .ai-typing { font-style: italic; color: var(--text-tertiary); font-size: 0.8rem; margin-left: 10px; margin-bottom: 8px; }
 
         .ai-prompts-container {
@@ -72,7 +74,7 @@
             -webkit-overflow-scrolling: touch; scrollbar-width: none;
         }
         .ai-prompts-scroll::-webkit-scrollbar { display: none; }
-        
+
         .prompt-chip {
             background: var(--bg-secondary); border: 1px solid var(--border-subtle);
             color: var(--text-primary); padding: 10px 16px; border-radius: 20px;
@@ -89,7 +91,7 @@
         .ai-input {
             flex: 1; background: var(--bg-secondary); border: 1px solid var(--border-subtle);
             border-radius: 24px; padding: 12px 16px; color: var(--text-primary);
-            font-size: 16px; /* 16px stops iOS/Android from auto-zooming when you tap the box */
+            font-size: max(16px, 1rem); /* 16px stops the phone zooming in; rem keeps iPhone identical */
             outline: none;
         }
         .ai-input:focus { border-color: var(--accent-primary); }
@@ -125,41 +127,64 @@
         </div>
     </div>
 
-    <div class="ai-input-area">
+    <div class="ai-input-area" id="ai-input-area">
         <input type="text" id="ai-input" class="ai-input" placeholder="Ask Aarav Sensei..." onkeypress="handleAIEnter(event)">
         <button class="ai-send-btn" onclick="sendAIMessage()">➤</button>
     </div>
 
     <script>
-        /* FIX: keep the body exactly as tall as the visible screen (keyboard-aware).
-           On iPhone this returns the same height it already had, so the look is unchanged. */
-        (function fitViewport() {
+        /* ===== KEYBOARD / VIEWPORT FIX (3 nets) ===== */
+        (function () {
+            var body = document.body;
+            var inputArea = document.getElementById('ai-input-area');
+            var input = document.getElementById('ai-input');
+            var msgs = document.getElementById('ai-messages');
+
+            // NET #2: keep body exactly as tall as the visible screen
             function setHeight() {
                 var h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
-                document.body.style.setProperty('--app-h', h + 'px');
+                body.style.setProperty('--app-h', h + 'px');
             }
+
+            // NET #3: if the input bar still sits below the visible bottom, shove the page up by the gap.
+            // On iPhone the gap is ~0, so this is a no-op there (threshold guards tiny sub-pixel nudges).
+            function nudge() {
+                if (!inputArea) return;
+                var rect = inputArea.getBoundingClientRect();
+                var vvBottom = window.visualViewport
+                    ? (window.visualViewport.height + window.visualViewport.offsetTop)
+                    : window.innerHeight;
+                var overflow = rect.bottom - vvBottom;
+                if (overflow > 8) {
+                    body.style.transform = 'translateY(' + (-overflow) + 'px)';
+                } else {
+                    body.style.transform = 'translateY(0)';
+                }
+                if (msgs) msgs.scrollTop = msgs.scrollHeight;
+            }
+
+            function resetNudge() { body.style.transform = 'translateY(0)'; }
+
             setHeight();
             if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', setHeight);
-                window.visualViewport.addEventListener('scroll', setHeight);
+                window.visualViewport.addEventListener('resize', function () { setHeight(); nudge(); });
+                window.visualViewport.addEventListener('scroll', function () { setHeight(); nudge(); });
             }
-            window.addEventListener('resize', setHeight);
-            window.addEventListener('orientationchange', setHeight);
+            window.addEventListener('resize', function () { setHeight(); nudge(); });
+            window.addEventListener('orientationchange', function () { setHeight(); resetNudge(); });
 
-            /* when the keyboard pops up, nudge the input into view (Android safety net) */
-            var input = document.getElementById('ai-input');
             if (input) {
                 input.addEventListener('focus', function () {
-                    setTimeout(function () {
-                        setHeight();
-                        input.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                    }, 300);
+                    setTimeout(nudge, 300);   // keyboard mid-animation
+                    setTimeout(nudge, 600);   // settle
                 });
+                input.addEventListener('blur', resetNudge);
             }
         })();
+        /* ===== END FIX ===== */
 
-        function handleAIEnter(e) { 
-            if (e.key === 'Enter') sendAIMessage(); 
+        function handleAIEnter(e) {
+            if (e.key === 'Enter') sendAIMessage();
         }
 
         function sendPrompt(text) {
@@ -176,7 +201,7 @@
 
         function processUserMessage(text) {
             const messagesContainer = document.getElementById('ai-messages');
-            
+
             const userMsg = document.createElement('div');
             userMsg.className = 'ai-msg user';
             userMsg.textContent = text;
@@ -194,7 +219,7 @@
             setTimeout(() => {
                 const typingElement = document.getElementById(typingId);
                 if (typingElement) typingElement.remove();
-                
+
                 const response = getAIResponse(text);
                 const botMsg = document.createElement('div');
                 botMsg.className = 'ai-msg bot';
