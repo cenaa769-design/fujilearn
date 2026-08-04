@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- FIXED: Added interactive-widget=resizes-visual for Android keyboard -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-visual">
     <meta name="theme-color" content="#09090B">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Aarav Sensei - Fuji Learn</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icon.png">
-    <link rel="stylesheet" href="style.css?v=30.0">
+    <link rel="stylesheet" href="style.css?v=36.0">
     <script>
         (function() {
             const saved = localStorage.getItem('fuji_theme');
@@ -20,7 +21,8 @@
     <style>
         body {
             margin: 0; padding: 0; background: var(--bg-primary);
-            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            /* FIXED: Changed from 100vh to 100dvh for Android keyboard visibility */
+            height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
         }
         .sub-header {
             position: relative; background: var(--bg-primary);
