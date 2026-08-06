@@ -2,7 +2,8 @@
    FUJI LEARN - SERVICE WORKER (WITH AUTO-UPDATE)
    ========================================= */
 
-const CACHE_NAME = 'fuji-learn-v4'; // Bumped to v4 to force a clean cache
+// BUMPED TO V5 to force a clean cache and load the new Aarav Sensei UI fixes
+const CACHE_NAME = 'fuji-learn-v5'; 
 
 // Use relative paths (./) so it works perfectly in GitHub Pages subdirectories
 const CORE_ASSETS = [
